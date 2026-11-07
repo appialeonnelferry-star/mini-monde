@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-title" content="Mini Monde">
 <meta name="theme-color" content="#87bfff">
 <title>Mini Monde Créatif</title>
+<!-- Google AdSense : remplacez XXXXXXXXXXXXXXXX par votre identifiant éditeur (ca-pub-…) -->
+<meta name="google-adsense-account" content="ca-pub-XXXXXXXXXXXXXXXX">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 <style>
   html,body{margin:0;height:100%;overflow:hidden;background:#87bfff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
   canvas{display:block}
@@ -24,6 +27,8 @@
   .overlay h1{margin:0;font-size:34px}
   .overlay p{margin:0;max-width:460px;line-height:1.5;color:#e0e8f0;font-size:14px}
   #go{margin-top:8px;padding:14px 40px;font-size:18px;font-weight:700;border:0;border-radius:999px;background:#f4c542;color:#111;cursor:pointer}
+  .ad{width:min(92vw,360px);min-height:100px;margin-top:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12);border-radius:10px;color:#dde;font-size:12px;box-sizing:border-box}
+  .ad ins{display:block;width:100%}
   #joy{position:fixed;left:16px;bottom:70px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.4);display:none;z-index:4}
   #knob{position:absolute;left:30px;top:30px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.55);pointer-events:none}
   .mb{position:fixed;right:14px;width:84px;height:46px;border-radius:12px;background:rgba(0,0,0,.4);color:#fff;font-weight:700;display:none;align-items:center;justify-content:center;z-index:4;border:2px solid rgba(255,255,255,.35);font-size:14px}
@@ -55,6 +60,8 @@
   <p>Pour l'avoir comme une application : ouvre le site dans Safari (iPhone) ou Chrome (Android), puis Partager → « Sur l'écran d'accueil », ou Menu ⋮ → « Ajouter à l'écran d'accueil ».</p>
   <button id="go">Jouer</button>
   <button id="goMp" style="margin-top:4px;padding:12px 30px;border:0;border-radius:999px;font-weight:700;font-size:16px;background:#fff;color:#111;cursor:pointer">Multijoueur (en ligne)</button>
+  <!-- Emplacement publicitaire : visible seulement sur l'écran d'accueil, jamais pendant le jeu -->
+  <div class="ad"><ins class="adsbygoogle" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
 </div>
 
 <div id="joy"><div id="knob"></div></div>
@@ -877,6 +884,7 @@
   rebuild();
   respawn();
   requestAnimationFrame(frame);
+try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
 </script>
 </body>
 </html>
