@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mini Monde">
+<meta name="theme-color" content="#87bfff">
+<title>Mini Monde Créatif</title>
+<!-- Google AdSense : remplacez 4321702860523989 par votre identifiant éditeur (ca-pub-…) -->
+<meta name="google-adsense-account" content="ca-pub-4321702860523989">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4321702860523989" crossorigin="anonymous"></script>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#87bfff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  canvas{display:block}
+  #cross{position:fixed;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border:2px solid #fff;border-radius:50%;box-sizing:border-box;pointer-events:none;opacity:.85;z-index:2}
+  #hud{position:fixed;top:10px;left:10px;background:rgba(0,0,0,.45);color:#fff;padding:6px 10px;border-radius:10px;font-size:13px;font-weight:700;z-index:3;pointer-events:none}
+  #top{position:fixed;top:10px;right:10px;z-index:3}
+  .small{background:rgba(0,0,0,.45);color:#fff;border:0;border-radius:10px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer}
+  #hotbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:3px;z-index:3;background:rgba(0,0,0,.3);padding:4px;border-radius:10px}
+  .slot{width:28px;height:28px;border:2px solid rgba(0,0,0,.45);border-radius:6px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2);position:relative;cursor:pointer}
+  .slot.on{border:3px solid #fff}
+  .slot span{position:absolute;top:0;left:3px;font-size:10px;color:#fff;text-shadow:0 0 3px #000;font-weight:700}
+  #msg{position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:20px;font-weight:800;text-shadow:0 2px 6px rgba(0,0,0,.6);opacity:0;transition:opacity .4s;pointer-events:none;z-index:3;white-space:nowrap}
+  .overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(10,20,30,.74);color:#fff;text-align:center;padding:22px;z-index:5}
+  .overlay h1{margin:0;font-size:34px}
+  .overlay p{margin:0;max-width:460px;line-height:1.5;color:#e0e8f0;font-size:14px}
+  #go{margin-top:8px;padding:14px 40px;font-size:18px;font-weight:700;border:0;border-radius:999px;background:#f4c542;color:#111;cursor:pointer}
+  .ad{width:min(92vw,360px);min-height:100px;margin-top:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12);border-radius:10px;color:#dde;font-size:12px;box-sizing:border-box}
+  .ad ins{display:block;width:100%}
+  #joy{position:fixed;left:16px;bottom:70px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.4);display:none;z-index:4}
+  #knob{position:absolute;left:30px;top:30px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.55);pointer-events:none}
+  .mb{position:fixed;right:14px;width:84px;height:46px;border-radius:12px;background:rgba(0,0,0,.4);color:#fff;font-weight:700;display:none;align-items:center;justify-content:center;z-index:4;border:2px solid rgba(255,255,255,.35);font-size:14px}
+  .touch #joy{display:block}
+  .touch .mb{display:flex}
+  #bJump{bottom:70px}#bPlace{bottom:126px}#bBreak{bottom:182px}#bFly{bottom:238px}#bDown{bottom:294px;display:none}
+  .fly #bDown{display:flex}
+  #hearts{position:fixed;top:44px;left:10px;color:#ff4d6d;font-size:18px;font-weight:800;text-shadow:0 0 4px #000;z-index:3;pointer-events:none;letter-spacing:1px}
+  #board{position:fixed;top:112px;right:10px;background:rgba(0,0,0,.45);color:#fff;font-size:12px;font-weight:700;padding:6px 10px;border-radius:10px;z-index:3;pointer-events:none;text-align:right;line-height:1.5}
+  #mission{position:fixed;top:76px;left:10px;color:#fff;font-size:13px;font-weight:700;background:rgba(0,0,0,.45);padding:5px 9px;border-radius:10px;z-index:3;pointer-events:none}
+</style>
+</head>
+<body>
+
+<div id="cross"></div>
+<div id="hud"></div>
+<div id="hearts"></div>
+<div id="mission"></div>
+<div id="board"></div>
+<div id="top"><button class="small" id="reset">Nouveau monde</button> <button class="small" id="viewBtn">Vue : 1re personne</button> <button class="small" id="monBtn">Monstres : activés</button></div>
+<div id="hotbar"></div>
+<div id="msg"></div>
+
+<div class="overlay" id="start">
+  <h1>Mini Monde Créatif</h1>
+  <p>Construis ce que tu veux dans un grand monde. Ton monde est sauvegardé automatiquement sur cet appareil. Explore aussi : trouve les 6 coffres d’or cachés sur le terrain et bats les monstres verts qui apparaissent sur l’herbe (3 coups chacun, avec clic gauche ou le bouton Casser).</p>
+  <p>Ordinateur : ZQSD ou flèches pour bouger, souris pour regarder, clic gauche pour casser, clic droit pour poser, molette ou chiffres 1 à 0 pour choisir un bloc, F pour voler, Espace pour monter, Maj pour descendre.</p>
+  <p>Téléphone : joystick en bas à gauche, glisse le doigt pour regarder, boutons à droite (Casser et Poser se répètent si tu maintiens).</p>
+  <p>Pour l'avoir comme une application : ouvre le site dans Safari (iPhone) ou Chrome (Android), puis Partager → « Sur l'écran d'accueil », ou Menu ⋮ → « Ajouter à l'écran d'accueil ».</p>
+  <button id="go">Jouer</button>
+  <button id="goMp" style="margin-top:4px;padding:12px 30px;border:0;border-radius:999px;font-weight:700;font-size:16px;background:#fff;color:#111;cursor:pointer">Multijoueur (en ligne)</button>
+  <p style="font-size:12px;margin:8px 0 0"><a href="privacy.html" style="color:#93c5fd">Politique de confidentialité</a></p>
+  <!-- Emplacement publicitaire : visible seulement sur l'écran d'accueil, jamais pendant le jeu -->
+  <div class="ad"><ins class="adsbygoogle" data-ad-client="ca-pub-4321702860523989" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
+</div>
+
+<div id="joy"><div id="knob"></div></div>
+<div class="mb" id="bJump">Saut</div>
+<div class="mb" id="bPlace">Poser</div>
+<div class="mb" id="bBreak">Casser</div>
+<div class="mb" id="bFly">Voler</div>
+<div class="mb" id="bDown">Bas</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+  const W = 96, D = 96, H = 32, KEY = 'mini-monde-creatif-v2';
+  const PH = 2.2, PR = .3, GRAV = 26, JUMP = 8.6, WALK = 4.6, FLY = 9;
+  const BL = [null,
+    {t:[.36,.72,.27], s:[.46,.32,.19]}, // 1 herbe
+    {t:[.52,.37,.22]},                  // 2 terre
+    {t:[.5,.5,.52]},                    // 3 pierre
+    {t:[.66,.5,.3], s:[.45,.33,.18]},   // 4 bois
+    {t:[.2,.56,.2]},                    // 5 feuilles
+    {t:[.9,.85,.55]},                   // 6 sable
+    {t:[.7,.25,.2]},                    // 7 brique
+    {t:[1,.82,.2]},                     // 8 or
+    {t:[.95,.95,.95]},                  // 9 blanc
+    {t:[.2,.4,.9]}
+    // 10 bleu
+    ,{t:[.75,.78,.82], s:[.55,.35,.2]} // 11 épée                      // 10 bleu
+  ];
+  const ORDER = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  const data = new Uint8Array(W * D * H);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const idx = (x, y, z) => x + W * (z + D * y);
+  const inb = (x, y, z) => x >= 0 && x < W && y >= 0 && y < H && z >= 0 && z < D;
+  const get = (x, y, z) => {
+    if (y >= H) return 0;
+    if (y < 0 || x < 0 || z < 0 || x >= W || z >= D) return 3;
+    return data[idx(x, y, z)];
+  };
+  const solid = (x, y, z) => get(x, y, z) !== 0;
+  const colOf = (id, f) => f === 'top' ? BL[id].t : (BL[id].s || BL[id].t);
+
+  // Monde
+  function generate() {
+    for (let x = 0; x < W; x++) for (let z = 0; z < D; z++) {
+      const h = clamp(Math.round(10 + 4 * Math.sin(x * .09) + 3 * Math.cos(z * .11) + 2 * Math.sin((x + z) * .23)), 4, H - 10);
+      for (let y = 0; y <= h; y++) data[idx(x, y, z)] = (y === h) ? (h < 7 ? 6 : 1) : (y > h - 4 ? (h < 7 ? 6 : 2) : 3);
+    }
+    for (let i = 0; i < 180; i++) {
+      const x = 2 + (Math.random() * (W - 4) | 0), z = 2 + (Math.random() * (D - 4) | 0);
+      let h = -1;
+      for (let y = H - 1; y >= 0; y--) if (data[idx(x, y, z)]) { h = y; break; }
+      if (h < 7 || data[idx(x, h, z)] !== 1) continue;
+      for (let k = 1; k <= 4; k++) data[idx(x, h + k, z)] = 4;
+      for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) for (let dy = 3; dy <= 5; dy++) {
+        const X = x + dx, Y = h + dy, Z = z + dz;
+        if (inb(X, Y, Z) && !data[idx(X, Y, Z)] && Math.random() < .75) data[idx(X, Y, Z)] = 5;
+      }
+    }
+  }
+  // Aventure : coffres d’or, monstres et vie
+  const KEY2 = KEY + '-aventure', TOTAL = 6;
+  let treasures = [], found = 0, kills = 0, hp = 10, hurtT = 0, quiet = 0, mons = [], spawnT = 0, doneMsg = false;
+  const heartsEl = document.getElementById('hearts'), missionEl = document.getElementById('mission');
+  function placeChests() {
+    treasures = [];
+    for (let tries = 0; treasures.length < TOTAL && tries < 500; tries++) {
+      const x = 4 + (Math.random() * (W - 8) | 0), z = 4 + (Math.random() * (D - 8) | 0);
+      let h = -1;
+      for (let y = H - 1; y >= 0; y--) if (data[idx(x, y, z)]) { h = y; break; }
+      if (h < 0 || data[idx(x, h, z)] !== 1) continue;
+      data[idx(x, h + 1, z)] = 8;
+      treasures.push([x, h + 1, z]);
+    }
+    found = 0; kills = 0; maxHp = hp = 10; stats = {broken: 0, placed: 0, flyT: 0}; done = [];
+  }
+  function saveAdv() {
+    if (mp) return;
+    try { localStorage.setItem(KEY2, JSON.stringify({tr: treasures, found, kills, hp, maxHp, done, stats})); } catch (e) {}
+  }
+  function loadAdv() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY2) || 'null');
+      if (s && Array.isArray(s.tr)) { treasures = s.tr; found = s.found | 0; kills = s.kills | 0; hp = s.hp || 10; maxHp = s.maxHp || 10; done = s.done || []; stats = s.stats || stats; return; }
+    } catch (e) {}
+    placeChests();
+  }
+  function spawnMon() {
+    for (let t = 0; t < 30; t++) {
+      const a = Math.random() * Math.PI * 2, dist = 14 + Math.random() * 8;
+      const x = clamp(Math.floor(px + Math.cos(a) * dist), 1, W - 2), z = clamp(Math.floor(pz + Math.sin(a) * dist), 1, D - 2);
+      let h = -1;
+      for (let y = H - 1; y >= 0; y--) if (data[idx(x, y, z)]) { h = y; break; }
+      if (h < 0 || data[idx(x, h, z)] !== 1) continue;
+      const g = new THREE.Group();
+      const bx = (w, hh, dd, c, X, Y, Z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, dd), new THREE.MeshLambertMaterial({color: c})); m.position.set(X, Y, Z); g.add(m); };
+      bx(.36, .8, .36, 0x2e7d32, -.2, .4, 0); bx(.36, .8, .36, 0x2e7d32, .2, .4, 0);
+      bx(.8, .8, .4, 0x1565c0, 0, 1.2, 0);
+      bx(.3, .8, .3, 0x4caf50, -.55, 1.2, 0); bx(.3, .8, .3, 0x4caf50, .55, 1.2, 0);
+      bx(.6, .6, .6, 0x66bb6a, 0, 1.7, 0);
+      bx(.12, .12, .05, 0xff1744, -.14, 1.75, .31); bx(.12, .12, .05, 0xff1744, .14, 1.75, .31);
+      scene.add(g);
+      mons.push({g, x: x + .5, y: h + 1, z: z + .5, vy: 0, onG: false, hp: 3, cd: 0, far: false});
+      return;
+    }
+  }
+  function hurt(n) {
+    if (hurtT > 0) return;
+    hp -= n; hurtT = 1; quiet = 0;
+    if (hp <= 0) {
+      hp = 10;
+      for (const m of mons) scene.remove(m.g);
+      mons = [];
+      respawn();
+      showMsg('Tu as été vaincu ! Retour au départ');
+    } else showMsg('Aïe ! Un monstre t’a touché');
+  }
+  function hitMon() {
+    camera.getWorldDirection(dv);
+    const o = camera.position;
+    let best = null, bt = 5;
+    for (const m of mons) {
+      const vx = m.x - o.x, vyy = m.y + 1 - o.y, vz = m.z - o.z;
+      const t = vx * dv.x + vyy * dv.y + vz * dv.z;
+      if (t <= 0 || t > bt) continue;
+      if (Math.hypot(vx - dv.x * t, vyy - dv.y * t, vz - dv.z * t) < .9) { best = m; bt = t; }
+    }
+    if (!best) return false;
+    best.hp--;
+    if (!hit(best.x + dv.x * .5, best.y, best.z + dv.z * .5)) { best.x += dv.x * .5; best.z += dv.z * .5; }
+    best.vy = 4;
+    if (best.hp <= 0) {
+      scene.remove(best.g);
+      mons = mons.filter(m => m !== best);
+      kills++; showMsg('Monstre vaincu !'); saveAdv();
+    }
+    return true;
+  }
+  function updateAdv(dt) {
+    hurtT = Math.max(0, hurtT - dt);
+    if (flying) stats.flyT += dt;
+    quiet += dt;
+    if (quiet > 6 && hp < maxHp) hp = Math.min(maxHp, hp + dt * .5);
+    spawnT -= dt;
+    if (monstersOn && !mp && spawnT <= 0 && mons.length < 6) { spawnMon(); spawnT = 5; }
+    for (const m of mons) {
+      const dx = px - m.x, dz = pz - m.z, d = Math.hypot(dx, dz);
+      if (d > 40) { m.far = true; continue; }
+      m.cd -= dt;
+      const ux = dx / (d || 1), uz = dz / (d || 1);
+      if (d > 1.1 && d < 24) {
+        const sp = 2.3 * dt;
+        if (!hit(m.x + ux * sp, m.y, m.z)) m.x += ux * sp; else if (m.onG) m.vy = 7;
+        if (!hit(m.x, m.y, m.z + uz * sp)) m.z += uz * sp;
+      }
+      m.vy -= GRAV * dt;
+      const ny = m.y + m.vy * dt;
+      if (hit(m.x, ny, m.z)) { if (m.vy < 0) m.onG = true; m.vy = 0; }
+      else { m.y = ny; m.onG = false; }
+      if (d < 1.3 && m.cd <= 0) { hurt(1); m.cd = 1.2; }
+      m.g.position.set(m.x, m.y, m.z);
+      m.g.rotation.y = Math.atan2(dx, dz);
+    }
+    for (const m of mons) if (m.far) scene.remove(m.g);
+    mons = mons.filter(m => !m.far);
+    checkCh();
+    if (found >= TOTAL && !doneMsg) { doneMsg = true; showMsg('Aventure terminée ! Tous les coffres trouvés'); }
+    heartsEl.textContent = '♥'.repeat(Math.ceil(hp)) + '♡'.repeat(maxHp - Math.ceil(hp));
+    missionEl.innerHTML = `Mission : coffres d’or ${found}/${TOTAL} · Monstres vaincus : ${kills}<br>Défi : ${nextCh()}`;
+  }
+
+  function load() {
+    try {
+      const s = localStorage.getItem(KEY);
+      if (s && s.length === data.length) { for (let i = 0; i < s.length; i++) data[i] = s.charCodeAt(i); return true; }
+    } catch (e) {}
+    return false;
+  }
+  function save() {
+    if (mp) return;
+    try {
+      const a = new Array(data.length);
+      for (let i = 0; i < data.length; i++) a[i] = String.fromCharCode(data[i]);
+      localStorage.setItem(KEY, a.join(''));
+    } catch (e) {}
+  }
+  let saveT = null;
+  function queueSave() { clearTimeout(saveT); saveT = setTimeout(() => { save(); saveAdv(); }, 800); }
+  addEventListener('pagehide', save);
+  addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') save(); });
+
+  // Rendu
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87bfff);
+  scene.fog = new THREE.Fog(0x87bfff, 45, 130);
+  const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, .05, 200);
+  camera.rotation.order = 'YXZ';
+  const renderer = new THREE.WebGLRenderer({antialias: false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  renderer.setSize(innerWidth, innerHeight);
+  document.body.appendChild(renderer.domElement);
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, .9);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffffff, .6);
+  sun.position.set(1, 2, 1.4);
+  scene.add(sun);
+  const mat = new THREE.MeshLambertMaterial({vertexColors: true, side: THREE.DoubleSide});
+  let mesh = null;
+  const hl = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.02, 1.02, 1.02)), new THREE.LineBasicMaterial({color: 0x000000}));
+  hl.visible = false;
+  scene.add(hl);
+
+  function rebuild() {
+    const pos = [], nor = [], col = [];
+    const addFace = (x, y, z, a, s, c) => {
+      const u = (a + 1) % 3, v = (a + 2) % 3;
+      const b = [x, y, z];
+      if (s > 0) b[a] += 1;
+      const P = (i, j) => { const q = b.slice(); q[u] += i; q[v] += j; return q; };
+      const q = [P(0, 0), P(1, 0), P(1, 1), P(0, 1)];
+      const n = [0, 0, 0]; n[a] = s;
+      for (const k of [0, 1, 2, 0, 2, 3]) { pos.push(...q[k]); nor.push(...n); col.push(...c); }
+    };
+    for (let y = 0; y < H; y++) for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) {
+      const id = data[idx(x, y, z)];
+      if (!id) continue;
+      for (let a = 0; a < 3; a++) for (const s of [1, -1]) {
+        if (solid(x + (a === 0 ? s : 0), y + (a === 1 ? s : 0), z + (a === 2 ? s : 0))) continue;
+        addFace(x, y, z, a, s, colOf(id, a === 1 && s > 0 ? 'top' : 'side'));
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); }
+    mesh = new THREE.Mesh(g, mat);
+    scene.add(mesh);
+  }
+
+  // Joueur et collisions
+  let px = W / 2 + .5, pz = D / 2 + .5, py = 0, vy = 0, onG = false, flying = false;
+  let yaw = 0, pitch = 0, sel = 1;
+  const topY = (x, z) => { for (let y = H - 1; y >= 0; y--) if (data[idx(x, y, z)]) return y + 1; return 0; };
+  function hit(x, y, z) {
+    for (const X of [x - PR, x + PR]) for (const Z of [z - PR, z + PR]) for (const Y of [y + .01, y + PH - .01]) {
+      if (solid(Math.floor(X), Math.floor(Y), Math.floor(Z))) return true;
+    }
+    return false;
+  }
+  function respawn() {
+    px = W / 2 + .5; pz = D / 2 + .5; py = topY(W / 2 | 0, D / 2 | 0) + .5; vy = 0; onG = false;
+  }
+
+  // Visée : rayon voxel (rapide, pour le contour et les actions)
+  const dv = new THREE.Vector3();
+  let target = null;
+  function castRay() {
+    camera.getWorldDirection(dv);
+    const o = camera.position;
+    let prev = null, lx = NaN, ly = NaN, lz = NaN;
+    for (let t = 0; t < 6; t += .04) {
+      const x = Math.floor(o.x + dv.x * t), y = Math.floor(o.y + dv.y * t), z = Math.floor(o.z + dv.z * t);
+      if (x === lx && y === ly && z === lz) continue;
+      lx = x; ly = y; lz = z;
+      if (inb(x, y, z) && data[idx(x, y, z)]) return prev ? {hit: [x, y, z], prev} : null;
+      prev = [x, y, z];
+    }
+    return null;
+  }
+  function setBlock(x, y, z, id) {
+    if (mp) mpSend(x, y, z, id);
+    if (!inb(x, y, z)) return;
+    data[idx(x, y, z)] = id;
+    rebuild();
+    queueSave();
+  }
+  function doBreak() {
+    swingT = .3;
+    if (sel === 11) { swingSword(); return; }
+    if (hitMon() || !target) return;
+    const [x, y, z] = target.hit;
+    const ti = treasures.findIndex(t => t[0] === x && t[1] === y && t[2] === z);
+    if (ti >= 0) { treasures.splice(ti, 1); found++; showMsg('Coffre d’or trouvé !'); saveAdv(); }
+    const old = data[idx(x, y, z)]; setBlock(x, y, z, 0); stats.broken++; burst(x, y, z, old);
+  }
+  function doPlace() {
+    swingT = .3;
+    if (sel === 11) return;
+    if (!target || !target.prev) return;
+    const [x, y, z] = target.prev;
+    if (!inb(x, y, z) || data[idx(x, y, z)]) return;
+    if (x + 1 > px - PR && x < px + PR && z + 1 > pz - PR && z < pz + PR && y + 1 > py && y < py + PH) return;
+    setBlock(x, y, z, sel); stats.placed++; beep(330, .05);
+  }
+
+  // Barre de blocs
+  const hotbar = document.getElementById('hotbar');
+  function pick(id) {
+    sel = id;
+    document.querySelectorAll('.slot').forEach(s => s.classList.toggle('on', +s.dataset.id === id));
+  }
+  ORDER.forEach(id => {
+    const d = document.createElement('div');
+    d.className = 'slot';
+    d.dataset.id = id;
+    d.style.background = `rgb(${BL[id].t.map(v => v * 255 | 0).join(',')})`;
+    d.innerHTML = `<span>${id === 11 ? 'E' : id % 10}</span>`;
+    d.onclick = () => pick(id);
+    hotbar.appendChild(d);
+  });
+  pick(1);
+
+  const msgEl = document.getElementById('msg');
+  let msgT = null;
+  function showMsg(t) {
+    msgEl.textContent = t;
+    msgEl.style.opacity = 1;
+    clearTimeout(msgT);
+    msgT = setTimeout(() => msgEl.style.opacity = 0, 1400);
+  }
+  function toggleFly() {
+    flying = !flying;
+    vy = 0;
+    document.body.classList.toggle('fly', flying);
+    showMsg(flying ? 'Vol activé' : 'Marche');
+  }
+
+  // Commandes
+  const cv = renderer.domElement;
+  const touch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
+  if (touch) document.body.classList.add('touch');
+  const keys = {};
+  let started = false;
+  addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (/^Digit[0-9]$/.test(e.code)) { const n = +e.code.slice(5); pick(n === 0 ? 10 : n); }
+    if (e.code === 'Minus') pick(11);
+    if (e.code === 'KeyF') toggleFly();
+    if (e.code === 'Space') e.preventDefault();
+  });
+  addEventListener('keyup', e => { keys[e.code] = false; });
+  addEventListener('wheel', e => { pick(((sel - 1 + (e.deltaY > 0 ? 1 : -1) + 11) % 11) + 1); }, {passive: true});
+  addEventListener('contextmenu', e => e.preventDefault());
+  cv.addEventListener('mousedown', e => {
+    if (!started) return;
+    if (!touch && !document.pointerLockElement) cv.requestPointerLock();
+    if (e.button === 0) doBreak();
+    else if (e.button === 2) doPlace();
+  });
+  addEventListener('mousemove', e => {
+    if (document.pointerLockElement === cv) {
+      yaw -= e.movementX * .0025;
+      pitch = clamp(pitch - e.movementY * .0025, -1.5, 1.5);
+    }
+  });
+
+  let lookId = null, lx = 0, ly = 0;
+  let joyId = null, jx = 0, jz = 0, jc = [0, 0];
+  const joy = document.getElementById('joy');
+  const knob = document.getElementById('knob');
+  function moveJoy(t) {
+    let dx = (t.clientX - jc[0]) / 50, dy = (t.clientY - jc[1]) / 50;
+    const l = Math.hypot(dx, dy);
+    if (l > 1) { dx /= l; dy /= l; }
+    jx = dx; jz = dy;
+    knob.style.transform = `translate(${dx * 35}px,${dy * 35}px)`;
+  }
+  joy.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    joyId = t.identifier;
+    const r = joy.getBoundingClientRect();
+    jc = [r.left + r.width / 2, r.top + r.height / 2];
+    moveJoy(t);
+  }, {passive: false});
+  addEventListener('touchstart', e => {
+    for (const t of e.changedTouches) {
+      if (t.target.closest && t.target.closest('#joy,.mb,#hotbar,#top,#start')) continue;
+      if (lookId === null) { lookId = t.identifier; lx = t.clientX; ly = t.clientY; }
+    }
+  }, {passive: true});
+  addEventListener('touchmove', e => {
+    for (const t of e.changedTouches) {
+      if (t.identifier === lookId) {
+        yaw -= (t.clientX - lx) * .006;
+        pitch = clamp(pitch - (t.clientY - ly) * .006, -1.5, 1.5);
+        lx = t.clientX; ly = t.clientY;
+      } else if (t.identifier === joyId) moveJoy(t);
+    }
+  }, {passive: true});
+  function endTouch(e) {
+    for (const t of e.changedTouches) {
+      if (t.identifier === lookId) lookId = null;
+      if (t.identifier === joyId) { joyId = null; jx = jz = 0; knob.style.transform = ''; }
+    }
+  }
+  addEventListener('touchend', endTouch);
+  addEventListener('touchcancel', endTouch);
+
+  // Boutons tactiles (Casser et Poser se répètent si on maintient)
+  const hold = (el, fn) => {
+    let t = null;
+    el.addEventListener('touchstart', e => { e.preventDefault(); fn(); clearInterval(t); t = setInterval(fn, 230); }, {passive: false});
+    const stop = e => { if (e) e.preventDefault(); clearInterval(t); };
+    el.addEventListener('touchend', stop, {passive: false});
+    el.addEventListener('touchcancel', stop);
+  };
+  const press = (el, key) => {
+    el.addEventListener('touchstart', e => { e.preventDefault(); keys[key] = true; }, {passive: false});
+    el.addEventListener('touchend', e => { e.preventDefault(); keys[key] = false; }, {passive: false});
+    el.addEventListener('touchcancel', () => { keys[key] = false; });
+  };
+  hold(document.getElementById('bBreak'), doBreak);
+  hold(document.getElementById('bPlace'), doPlace);
+  press(document.getElementById('bJump'), 'Space');
+  press(document.getElementById('bDown'), 'touchDown');
+  document.getElementById('bFly').addEventListener('touchstart', e => { e.preventDefault(); toggleFly(); }, {passive: false});
+
+  // Démarrage et réinitialisation
+  document.getElementById('go').onclick = () => {
+    started = true;
+    document.getElementById('start').style.display = 'none';
+    if (!touch) cv.requestPointerLock();
+  };
+  document.getElementById('reset').onclick = () => {
+    if (!confirm('Effacer ton monde et en créer un nouveau ?')) return;
+    try { localStorage.removeItem(KEY); localStorage.removeItem(KEY2); } catch (e) {}
+    generate(); placeChests(); for (const m of mons) scene.remove(m.g); mons = []; doneMsg = false; rebuild(); respawn(); save(); saveAdv();
+    showMsg('Nouveau monde');
+  };
+  const CH = [
+    {id: 'b20', t: 'Casse 20 blocs', ok: () => stats.broken >= 20},
+    {id: 'p30', t: 'Pose 30 blocs', ok: () => stats.placed >= 30},
+    {id: 'm3', t: 'Vaincs 3 monstres', ok: () => kills >= 3},
+    {id: 'c3', t: 'Trouve 3 coffres d’or', ok: () => found >= 3},
+    {id: 'v10', t: 'Vole 10 secondes', ok: () => stats.flyT >= 10},
+    {id: 'h20', t: 'Atteins la hauteur 20', ok: () => py >= 20}
+  ];
+  let maxHp = 10, done = [], stats = {broken: 0, placed: 0, flyT: 0};
+  function checkCh() {
+    for (const c of CH) {
+      if (done.includes(c.id) || !c.ok()) continue;
+      done.push(c.id);
+      maxHp = Math.min(20, maxHp + 2); hp = maxHp;
+      showMsg('Défi réussi : ' + c.t + ' · Bonus : +2 cœurs');
+      saveAdv();
+    }
+  }
+  function nextCh() { const c = CH.find(x => !done.includes(x.id)); return c ? c.t : 'tous réussis !'; }
+  // Multijoueur (salon en ligne via la fonction room de Claude)
+  let mp = false, rm = null, mpLog = [], others = new Map(), lastPres = 0, mpPeers = 1;
+  const AV_COLS = [0xe63946, 0x2a9d8f, 0xffbe0b, 0x9b5de5, 0xff7f50];
+  function mulberry(a) {
+    return () => {
+      a |= 0; a = a + 0x6d2b79f5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function makeAvatar(col) {
+    const g = new THREE.Group();
+    const bx = (w, hh, dd, c, X, Y, Z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, dd), new THREE.MeshLambertMaterial({color: c})); m.position.set(X, Y, Z); g.add(m); };
+    bx(.36, .8, .36, 0x1d4ed8, -.2, .4, 0); bx(.36, .8, .36, 0x1d4ed8, .2, .4, 0);
+    bx(.8, .8, .4, col, 0, 1.2, 0);
+    bx(.3, .8, .3, 0xffd166, -.55, 1.2, 0); bx(.3, .8, .3, 0xffd166, .55, 1.2, 0);
+    bx(.6, .6, .6, 0xffd166, 0, 1.7, 0);
+    bx(.3, .3, .3, col, 0, 2.5, 0);
+    scene.add(g);
+    return g;
+  }
+  function applyRemote(x, y, z, id) {
+    if (inb(x, y, z)) data[idx(x, y, z)] = id;
+  }
+  function mpSend(x, y, z, id) {
+    if (!inb(x, y, z)) return;
+    mpLog.push([x, y, z, id]);
+    rm.emit('edit', {x, y, z, id}).catch(() => {});
+  }
+  function mpTick(now) {
+    if (now - lastPres > 100) {
+      lastPres = now;
+      rm.presence({p: [+px.toFixed(2), +py.toFixed(2), +pz.toFixed(2)], y: +yaw.toFixed(2), s: myScore()}).catch(() => {});
+    }
+    const seen = new Set();
+    for (const p of rm.peers()) {
+      const pr = p.presence;
+      if (p.isMe || !pr || !Array.isArray(pr.p)) continue;
+      let av = others.get(p.peer);
+      if (!av) {
+        const h = [...p.peer].reduce((a, c) => a + c.charCodeAt(0), 0);
+        av = makeAvatar2(AV_COLS[h % AV_COLS.length]);
+        others.set(p.peer, av);
+      }
+      av.position.set(pr.p[0], pr.p[1], pr.p[2]);
+      av.rotation.y = (pr.y || 0) + Math.PI;
+      const lt = av.userData.lt || now; av.userData.lt = now;
+      animAv(av, Math.min(.2, (now - lt) / 1000), pr.p[0], pr.p[1], pr.p[2], false, false);
+      seen.add(p.peer);
+    }
+    for (const [k, av] of others) if (!seen.has(k)) { scene.remove(av); others.delete(k); }
+    mpPeers = seen.size + 1;
+  }
+  async function mpStart() {
+    let c = null;
+    try { c = window.claude ? await window.claude.use('room') : null; } catch (e) {}
+    if (!c) { showMsg('Multijoueur indisponible ici : ouvre le lien connecté à Claude'); return; }
+    rm = c; mp = true;
+    Math.random = mulberry(20260715);
+    data.fill(0); generate(); placeChests(); mpLog = [];
+    rebuild(); respawn();
+    document.getElementById('start').style.display = 'none';
+    document.getElementById('reset').style.display = 'none';
+    started = true;
+    if (!touch) cv.requestPointerLock();
+    rm.on('edit', m => { if (m.isMe || !m.data) return; const e = m.data; applyRemote(e.x, e.y, e.z, e.id); mpLog.push([e.x, e.y, e.z, e.id]); rebuild(); });
+    rm.on('state', m => { if (m.isMe || !m.data || !Array.isArray(m.data.e)) return; for (const [x, y, z, id] of m.data.e) { applyRemote(x, y, z, id); mpLog.push([x, y, z, id]); } rebuild(); });
+    rm.on('sync', m => { if (m.isMe) return; for (let i = 0; i < mpLog.length; i += 150) rm.emit('state', {e: mpLog.slice(i, i + 150)}).catch(() => {}); });
+    rm.onConnection(ok => showMsg(ok ? 'Connecté au salon' : 'Connexion perdue…'));
+    rm.emit('sync', {}).catch(() => {});
+    showMsg('Multijoueur : bienvenue !');
+  }
+  document.getElementById('goMp').onclick = mpStart;
+
+  function faceTex() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#ffd166'; g.fillRect(0, 0, 64, 64);
+    g.fillStyle = '#222'; g.fillRect(12, 16, 14, 3); g.fillRect(38, 16, 14, 3);
+    g.fillStyle = '#111'; g.fillRect(14, 22, 10, 10); g.fillRect(40, 22, 10, 10);
+    g.fillStyle = '#fff'; g.fillRect(17, 24, 3, 3); g.fillRect(43, 24, 3, 3);
+    g.fillStyle = 'rgba(255,90,90,.5)';
+    g.beginPath(); g.arc(12, 40, 5, 0, 7); g.fill();
+    g.beginPath(); g.arc(52, 40, 5, 0, 7); g.fill();
+    g.fillStyle = '#7a2e1c'; g.fillRect(24, 42, 16, 3); g.fillRect(20, 39, 4, 3); g.fillRect(40, 39, 4, 3);
+    const t = new THREE.CanvasTexture(c);
+    t.magFilter = THREE.NearestFilter;
+    return t;
+  }
+  const FACE_TEX = faceTex();
+  function makeAvatar2(col) {
+    const g = new THREE.Group();
+    const M = c => new THREE.MeshLambertMaterial({color: c});
+    const part = (w, h, d, m, x, y, z, parent) => { const q = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); q.position.set(x, y, z); parent.add(q); return q; };
+    const legL = new THREE.Group(), legR = new THREE.Group(), armL = new THREE.Group(), armR = new THREE.Group();
+    legL.position.set(-.2, .8, 0); legR.position.set(.2, .8, 0);
+    armL.position.set(-.55, 1.55, 0); armR.position.set(.55, 1.55, 0);
+    g.add(legL, legR, armL, armR);
+    part(.36, .8, .36, M(0x1d4ed8), 0, -.4, 0, legL);
+    part(.36, .8, .36, M(0x1d4ed8), 0, -.4, 0, legR);
+    part(.8, .8, .4, M(col), 0, 1.2, 0, g);
+    part(.3, .8, .3, M(0xffd166), 0, -.4, 0, armL);
+    part(.3, .8, .3, M(0xffd166), 0, -.4, 0, armR);
+    const yellow = M(0xffd166), face = new THREE.MeshLambertMaterial({map: FACE_TEX});
+    g.userData.head = part(.6, .6, .6, yellow, 0, 1.7, 0, g);
+    g.userData.p = {legL, legR, armL, armR};
+    scene.add(g);
+    return g;
+  }
+  let swingT = 0;
+  function animAv(g, dt, x, y, z, air, swing) {
+    const pr = g.userData.prev || [x, y, z];
+    const sp = dt > 0 ? Math.hypot(x - pr[0], z - pr[2]) / dt : 0;
+    const vyv = dt > 0 ? (y - pr[1]) / dt : 0;
+    g.userData.prev = [x, y, z];
+    const p = g.userData.p;
+    if (!p) return;
+    g.userData.t = (g.userData.t || 0) + dt * sp * 2.2;
+    const s = Math.sin(g.userData.t) * Math.min(1, sp / 3) * .9;
+    const jump = air || Math.abs(vyv) > 1.5;
+    p.legL.rotation.x = jump ? -.4 : s;
+    p.legR.rotation.x = jump ? .4 : -s;
+    p.armL.rotation.x = jump ? -2.6 : -s * .8;
+    p.armR.rotation.x = swing ? -1.5 : (jump ? -2.6 : s * .8);
+  }
+  let view3 = false;
+  const me = makeAvatar2(0xe63946);
+  me.visible = false;
+  document.getElementById('viewBtn').onclick = () => {
+    view3 = !view3;
+    document.getElementById('viewBtn').textContent = view3 ? 'Vue : 3e personne' : 'Vue : 1re personne';
+  };
+
+  // Touche perso : cycle jour/nuit partagé, particules et sons
+  const SKY_DAY = new THREE.Color(0x87bfff), SKY_NIGHT = new THREE.Color(0x0b1026);
+  function dayCycle() {
+    const t = (Date.now() / 240000 + .3) % 1;
+    const dl = .5 + .5 * Math.sin(t * Math.PI * 2 - Math.PI / 2);
+    scene.background.lerpColors(SKY_NIGHT, SKY_DAY, dl);
+    scene.fog.color.copy(scene.background);
+    sun.intensity = .15 + .6 * dl;
+    hemi.intensity = .25 + .65 * dl;
+  }
+  const parts = [];
+  const pGeo = new THREE.BoxGeometry(.18, .18, .18);
+  function burst(x, y, z, id) {
+    if (!id || !BL[id]) return;
+    const c = BL[id].t;
+    for (let i = 0; i < 8; i++) {
+      const m = new THREE.Mesh(pGeo, new THREE.MeshLambertMaterial({color: new THREE.Color(c[0], c[1], c[2])}));
+      m.position.set(x + .5 + (Math.random() - .5) * .6, y + .5 + (Math.random() - .5) * .6, z + .5 + (Math.random() - .5) * .6);
+      m.userData.v = [(Math.random() - .5) * 4, Math.random() * 4 + 1, (Math.random() - .5) * 4];
+      m.userData.life = .6;
+      scene.add(m);
+      parts.push(m);
+    }
+    beep(220 + Math.random() * 180, .06);
+  }
+  function updateParts(dt) {
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const m = parts[i], v = m.userData.v;
+      v[1] -= 12 * dt;
+      m.position.x += v[0] * dt; m.position.y += v[1] * dt; m.position.z += v[2] * dt;
+      m.userData.life -= dt;
+      if (m.userData.life <= 0) { scene.remove(m); m.material.dispose(); parts.splice(i, 1); }
+    }
+  }
+  let actx = null;
+  function beep(f, dur) {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = f; g.gain.value = .08;
+      o.connect(g); g.connect(actx.destination);
+      o.start(); g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + dur);
+      o.stop(actx.currentTime + dur);
+    } catch (e) {}
+  }
+
+  // Nuages, pluie et tableau des scores
+  const clouds = [];
+  const cMat = new THREE.MeshLambertMaterial({color: 0xffffff, transparent: true, opacity: .9});
+  for (let i = 0; i < 14; i++) {
+    const g = new THREE.Group();
+    for (let k = 0; k < 3; k++) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(4 + Math.random() * 3, 1.2, 3 + Math.random() * 2), cMat);
+      m.position.set(k * 2.2 - 2.2 + Math.random() * .5, Math.random() * .6, Math.random() * .8);
+      g.add(m);
+    }
+    g.position.set(Math.random() * W * 1.4 - W * .2, 40, Math.random() * D * 1.4 - D * .2);
+    g.userData.s = .6 + Math.random() * .8;
+    scene.add(g);
+    clouds.push(g);
+  }
+  function updClouds(dt) {
+    for (const c of clouds) {
+      c.position.x += c.userData.s * dt;
+      if (c.position.x > W * 1.6) c.position.x = -W * .3;
+    }
+  }
+  const RN = 400, rainPos = new Float32Array(RN * 3);
+  const rainGeo = new THREE.BufferGeometry();
+  rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+  const rain = new THREE.Points(rainGeo, new THREE.PointsMaterial({color: 0xaed8ff, size: .12, transparent: true, opacity: .7}));
+  rain.frustumCulled = false;
+  scene.add(rain);
+  for (let i = 0; i < RN; i++) { rainPos[i * 3] = Math.random() * 40 - 20; rainPos[i * 3 + 1] = Math.random() * 30; rainPos[i * 3 + 2] = Math.random() * 40 - 20; }
+  function isRaining() { return Math.floor(Date.now() / 120000) % 4 === 0; }
+  function updRain(dt) {
+    rain.visible = isRaining();
+    if (!rain.visible) return;
+    for (let i = 0; i < RN; i++) {
+      rainPos[i * 3 + 1] -= 16 * dt;
+      if (rainPos[i * 3 + 1] < -1) {
+        rainPos[i * 3] = px + Math.random() * 40 - 20;
+        rainPos[i * 3 + 1] = py + 15 + Math.random() * 10;
+        rainPos[i * 3 + 2] = pz + Math.random() * 40 - 20;
+      }
+    }
+    rainGeo.attributes.position.needsUpdate = true;
+  }
+  let lastBoard = 0, record = 0;
+  try { record = +localStorage.getItem('mini-monde-record') || 0; } catch (e) {}
+  function myScore() { return stats.broken + stats.placed + 5 * kills + 20 * found + 10 * done.length; }
+  function updBoard(now) {
+    if (now - lastBoard < 500) return;
+    lastBoard = now;
+    const s = myScore();
+    if (s > record) { record = s; try { localStorage.setItem('mini-monde-record', record); } catch (e) {} }
+    const rows = [['Toi', s]];
+    if (dbx) { rows.length = 0; for (const r of allScores) rows.push([r.name === uid ? 'Toi' : 'Joueur', r.s]); } else if (mp && rm) for (const p of rm.peers()) { if (!p.isMe && p.presence) rows.push(['Joueur ' + rows.length, +p.presence.s || 0]); }
+    cloudSave(now, s);
+    rows.sort((a, b) => b[1] - a[1]);
+    document.getElementById('board').innerHTML = '<b>Tableau des scores</b><br>' + rows.slice(0, 5).map(r => r[0] + ' : ' + r[1]).join('<br>') + '<br><span style="opacity:.7">Record : ' + record + '</span>';
+  }
+
+  // Base de données sécurisée (db de Claude) : progression privée par joueur + classement partagé
+  let dbx = null, uid = null, allScores = [], lastSig = '', lastW = 0;
+  async function initCloud() {
+    try {
+      const u = window.claude ? await window.claude.use('user') : null;
+      uid = u ? await u.id() : null;
+      dbx = window.claude && uid ? await window.claude.use('db') : null;
+    } catch (e) { dbx = null; }
+    if (!dbx) return;
+    try {
+      const snap = await dbx.collection('data/users/' + uid).doc('progress').get();
+      const d = snap.exists ? snap.data() : null;
+      if (d) {
+        found = d.found | 0; kills = d.kills | 0;
+        done = Array.isArray(d.done) ? d.done : done;
+        maxHp = d.maxHp || maxHp;
+        if (d.stats) stats = d.stats;
+      }
+    } catch (e) {}
+    try {
+      dbx.collection('scores').onSnapshot(qs => {
+        allScores = qs.docs.filter(d => d.exists).map(d => ({name: d.id, s: (d.data() || {}).s | 0}));
+      }, () => {});
+    } catch (e) {}
+  }
+  function cloudSave(now, s) {
+    if (!dbx || !uid || now - lastW < 4000) return;
+    const sig = JSON.stringify([s, found, kills, done, maxHp, stats]);
+    if (sig === lastSig) return;
+    lastSig = sig; lastW = now;
+    dbx.collection('data/users/' + uid).doc('progress').set({found, kills, done, maxHp, stats}).catch(() => {});
+    dbx.collection('scores').doc(uid).set({s}).catch(() => {});
+  }
+
+  let monstersOn = true;
+  function swingSword() {
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+    const dead = mons.filter(m => {
+      const dx = m.x - px, dz = m.z - pz, d = Math.hypot(dx, dz);
+      return d < 3.2 && (d < .8 || (dx * fx + dz * fz) / d > .3);
+    });
+    if (!dead.length) return;
+    for (const m of dead) scene.remove(m.g);
+    mons = mons.filter(m => !dead.includes(m));
+    kills += dead.length;
+    showMsg('Monstre détruit !');
+    saveAdv();
+  }
+  function clearMons() { for (const m of mons) scene.remove(m.g); mons = []; }
+  document.getElementById('monBtn').onclick = () => {
+    monstersOn = !monstersOn;
+    if (!monstersOn) clearMons();
+    document.getElementById('monBtn').textContent = monstersOn ? 'Monstres : activés' : 'Monstres : désactivés';
+    showMsg(monstersOn ? 'Monstres activés' : 'Monstres détruits');
+  };
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  // Boucle
+  function update(dt) {
+    let f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0) - jz;
+    let r = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0) + jx;
+    const L = Math.hypot(f, r);
+    if (L > 1) { f /= L; r /= L; }
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
+    const ddx = fx * f + rx * r, ddz = fz * f + rz * r;
+    const sp = (flying ? FLY : WALK) * dt;
+    if (!hit(px + ddx * sp, py, pz)) px += ddx * sp;
+    if (!hit(px, py, pz + ddz * sp)) pz += ddz * sp;
+
+    const down = keys.ShiftLeft || keys.ShiftRight || keys.touchDown;
+    if (flying) {
+      const dir = (keys.Space ? 1 : 0) - (down ? 1 : 0);
+      const ny = py + dir * FLY * dt;
+      if (!hit(px, ny, pz)) py = ny;
+      vy = 0; onG = false;
+      return;
+    }
+    if (keys.Space && onG) { vy = JUMP; onG = false; }
+    vy -= GRAV * dt;
+    const ny = py + vy * dt;
+    let land = null, ceil = null;
+    for (let x = Math.floor(px - PR); x <= Math.floor(px + PR); x++) for (let z = Math.floor(pz - PR); z <= Math.floor(pz + PR); z++) {
+      for (let y = Math.floor(ny) - 1; y <= Math.floor(ny + PH); y++) {
+        if (!solid(x, y, z)) continue;
+        if (px + PR <= x || px - PR >= x + 1 || pz + PR <= z || pz - PR >= z + 1) continue;
+        if (ny + PH <= y || ny >= y + 1) continue;
+        if (vy <= 0) { if (land === null || y + 1 > land) land = y + 1; }
+        else if (ceil === null || y < ceil) ceil = y;
+      }
+    }
+    if (land !== null) { py = land; vy = 0; onG = true; }
+    else if (ceil !== null) { py = ceil - PH; vy = 0; }
+    else { py = ny; onG = false; }
+    if (py < -5) { respawn(); showMsg('Retour au départ'); }
+  }
+
+  const hudEl = document.getElementById('hud');
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000);
+    last = now;
+    if (started) { update(dt); updateAdv(dt); }
+    if (mp && rm) mpTick(now);
+    dayCycle();
+    updateParts(dt);
+    updClouds(dt);
+    updRain(dt);
+    updBoard(now);
+    camera.position.set(px, py + 1.6, pz);
+    camera.rotation.set(pitch, yaw, 0);
+    me.visible = view3; me.position.set(px, py, pz); me.rotation.y = yaw + Math.PI;
+    animAv(me, dt, px, py, pz, !onG, swingT > 0); swingT = Math.max(0, swingT - dt);
+    if (view3) {
+      const ce = Math.cos(.35) * 4.5, se = Math.sin(.35) * 4.5;
+      camera.position.set(px + Math.sin(yaw) * ce, py + 1.6 + se, pz + Math.cos(yaw) * ce);
+      camera.lookAt(px, py + 1.4, pz);
+    }
+    camera.updateMatrixWorld();
+    target = castRay();
+    if (target) { hl.visible = true; hl.position.set(target.hit[0] + .5, target.hit[1] + .5, target.hit[2] + .5); }
+    else hl.visible = false;
+    hudEl.textContent = `${sel === 11 ? 'Épée' : 'Bloc ' + (sel % 10 || 10)} · ${flying ? 'Vol' : 'Marche'}${mp ? ' · En ligne : ' + mpPeers : ''}`;
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+
+  if (!load()) generate();
+  loadAdv();
+  initCloud();
+  rebuild();
+  respawn();
+  requestAnimationFrame(frame);
+try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+</script>
+</body>
+</html>
